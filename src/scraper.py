@@ -4,6 +4,7 @@ This module provides a Scraper class that uses Selenium to automate
 browser interactions and extract structured data from real estate websites.
 """
 
+import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -115,6 +116,53 @@ class Scraper:
             # Delegate error handling to centralized error handler
             handle_scraping_exception(e)
             # Return empty DataFrame for consistency
+            return pd.DataFrame()
+
+    def scrape_multiple_pages(self, base_url: str, start: int = 1, stop: int = 5):
+        """
+        Orchestrates the scraping of multiple listing pages.
+
+        Navigates through paginated results, calling fetch() and extract()
+        for each page, and aggregates the results into a single DataFrame.
+
+        Args:
+            base_url (str): The base URL for the listings. It is assumed to
+                            contain query parameters, so new params are
+                            appended with '&'.
+            start (int): The starting page number.
+            stop (int): The page number to stop before (e.g., stop=5 scrapes 1-4).
+
+        Returns:
+            pd.DataFrame: A single DataFrame containing data from all scraped pages.
+        """
+        all_dataframes = []
+
+        for index in range(start, stop):
+            print(f"Fetching page {index}...")
+            self.fetch(f"{base_url}&page={index}")
+
+            print(
+                f"Page {index} has fetched\nExtracting data from Page {index}...")
+            df = self.extract()
+
+            print(f"Page {index} has been extracted")
+
+            if not df.empty:
+                all_dataframes.append(df)
+            else:
+                # If we get an empty DataFrame, it means we've hit the last page
+                print("Found an empty page. Assuming this is the last page. Stopping.")
+                break
+
+            # Add a polite delay to avoid overwhelming the server.
+            print("Waiting for 2 seconds before next page...")
+            time.sleep(2)
+
+        # Only concatenate if we have collected data.
+        if all_dataframes:
+            return pd.concat(all_dataframes, ignore_index=True)
+        else:
+            print("No data was collected.")
             return pd.DataFrame()
 
     def close(self):
