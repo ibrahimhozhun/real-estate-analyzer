@@ -9,6 +9,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.common.exceptions import NoSuchElementException
 from .utils.error_handler import handle_scraping_exception
 import pandas as pd
 
@@ -73,41 +74,62 @@ class Scraper:
         """
         self.driver.get(url)
 
-    def extract(self):
-        """Extract structured data from real estate listings on the current page.
+    def _safe_find_text(self, parent_element, selector: str, default: str = None):
+        """Safely find an element and return its text, handling NoSuchElementException.
 
-        Scrapes price and date information from listing elements and structures
-        them into a pandas DataFrame for further analysis.
+        This is an internal helper method to reduce code duplication in the main
+        extract method. It encapsulates the try-except logic for finding a
+        single element's text.
+
+        Args:
+            parent_element: The Selenium element to search within.
+            selector (str): The CSS selector for the target child element.
+            default (str, optional): The value to return if the element is not found.
+                                    Defaults to None.
 
         Returns:
-            pd.DataFrame: A DataFrame containing 'price' and 'date' columns.
-                Returns an empty list if extraction fails.
-
-        Note:
-            Price text has the last 3 characters removed (assumes "TL" suffix).
-            If an error occurs during extraction, it's handled by the
-            error_handler module and an empty list is returned.
+            str or None: The text content of the found element, or the default value.
         """
         try:
-            # Initialize list to collect listing data (converted to DataFrame later )
+            return parent_element.find_element(By.CSS_SELECTOR, selector).text
+        except NoSuchElementException:
+            return default
+
+    def extract(self):
+        """Extract structured data from real estate listings on the list view page.
+
+        Scrapes key features from each listing and structures them into a pandas
+        DataFrame. Handles missing values gracefully by assigning None.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing listing details. Columns include
+                'title', 'price', 'date', 'location', 'room_count',
+                'gross_square_meters', 'building_age', 'floor_type',
+                and 'property_type'. Returns an empty DataFrame if the
+                main extraction process fails.
+        """
+        try:
+            # Initialize list to collect data from each listing (converted to DataFrame later )
             data = []
             # Locate all elements that contain listings
             listings = self.driver.find_elements(
                 By.CSS_SELECTOR, "div.list-view-content")
 
             for listing in listings:
-                # Extract price text and strip currency suffix to enable numerical conversion
-                price = listing.find_element(
-                    By.CSS_SELECTOR, "span.list-view-price").text[:-3]
-                # Extract listing publication date
-                date = listing.find_element(
-                    By.CSS_SELECTOR, "span.list-view-date").text
+                # Use the helper method to safely extract raw text for each field
+                listing_data = {
+                    "title": self._safe_find_text(listing, "header.list-view-header > h3"),
+                    "price": self._safe_find_text(listing, "span.list-view-price"),
+                    "date": self._safe_find_text(listing, "span.list-view-date"),
+                    "location": self._safe_find_text(listing, "span.list-view-location"),
+                    "room_count": self._safe_find_text(listing, "span.celly.houseRoomCount"),
+                    "gross_square_meters": self._safe_find_text(listing, "span.celly.squareMeter"),
+                    "building_age": self._safe_find_text(listing, "span.celly.buildingAge"),
+                    "floor_type": self._safe_find_text(listing, "span.celly.floortype"),
+                    "property_type": self._safe_find_text(listing, "span.left")
+                }
 
-                # Add extracted fields to DataFrame
-                data.append({
-                    "price": price,
-                    "date": date
-                })
+                data.append(listing_data)
 
             # Convert collected data to DataFrame for analysis
             return pd.DataFrame(data)
