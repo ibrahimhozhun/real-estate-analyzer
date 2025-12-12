@@ -4,6 +4,9 @@ This module orchestrates the scraping process by initializing the scraper,
 fetching the target URL, extracting data, and displaying results.
 """
 
+import os
+
+import pandas as pd
 from .config import DATA_URL
 from .scraper import Scraper
 
@@ -31,6 +34,18 @@ def main():
         if not all_data.empty:
             print("Sample of collected data:")
             print(all_data.head())
+
+            # Check if data.csv file exists
+            file_exists = os.path.isfile("data.csv")
+
+            if file_exists:
+                # Get the data from our previous scrapings
+                df = pd.read_csv("data.csv")
+                # Concatinate old data with new data and store them in data.csv file
+                pd.concat([df, all_data], ignore_index=True).to_csv(
+                    "data.csv", index=False)
+            else:
+                all_data.to_csv("data.csv", index=False)
         else:
             print("No data was scraped.")
         print("------------------------")
