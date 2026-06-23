@@ -1,0 +1,4 @@
+{
+  "title": "Food Ordering App",
+  "short_description": "A full-stack marketplace featuring a responsive Next.js interface for customers and a powerful FastAPI backend for restaurants. Includes real-time order tracking and secure authentication.", 
+}
