@@ -1,4 +1,4 @@
 {
-  "title": "Food Ordering App",
-  "short_description": "A full-stack marketplace featuring a responsive Next.js interface for customers and a powerful FastAPI backend for restaurants. Includes real-time order tracking and secure authentication.", 
+  "title": "Real Estate Market Analyzer",
+  "short_description": "An end-to-end data science pipeline. Automates data extraction from real estate platforms via Selenium, stores it in PostgreSQL, and applies Scikit-learn algorithms to identify undervalued properties."
 }
