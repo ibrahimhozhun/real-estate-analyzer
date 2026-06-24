@@ -1,4 +1,11 @@
 {
   "title": "Real Estate Market Analyzer",
-  "short_description": "An end-to-end data science pipeline. Automates data extraction from real estate platforms via Selenium, stores it in PostgreSQL, and applies Scikit-learn algorithms to identify undervalued properties."
+  "short_description": "An end-to-end data science pipeline. Automates data extraction from real estate platforms via Selenium, stores it in PostgreSQL, and applies Scikit-learn algorithms to identify undervalued properties.",
+  "tech_stack": [
+    "Python",
+    "Selenium",
+    "Scikit-learn",
+    "PostgreSQL",
+    "Pandas"
+  ],
 }
